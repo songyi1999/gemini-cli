@@ -6,12 +6,19 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="toolbar">
+        <button id="settings-button">Settings</button>
+        <button id="login-button">Login</button>
+    </div>
     <div id="chat-container">
         <div id="chat-box"></div>
         <div id="input-container">
             <input type="text" id="message-input" placeholder="Type your message...">
             <button id="send-button">Send</button>
         </div>
+    </div>
+    <div id="status-bar">
+        <span id="status-text">Not logged in</span>
     </div>
     <script src="./renderer.js"></script>
 </body>

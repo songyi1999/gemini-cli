@@ -1,25 +1,54 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
+const GoogleOAuth = require('electron-google-oauth');
 
-function createWindow () {
-  const win = new BrowserWindow({
+let mainWindow;
+let settingsWindow;
+
+function createMainWindow () {
+  mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: true,
+      contextIsolation: false
     }
   });
 
-  win.loadFile('index.html');
+  mainWindow.loadFile('index.html');
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+}
+
+function createSettingsWindow() {
+  settingsWindow = new BrowserWindow({
+    width: 400,
+    height: 300,
+    parent: mainWindow,
+    modal: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  settingsWindow.loadFile('settings.html');
+
+  settingsWindow.on('closed', () => {
+    settingsWindow = null;
+  });
 }
 
 app.whenReady().then(() => {
-  createWindow();
+  createMainWindow();
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+    if (mainWindow === null) {
+      createMainWindow();
     }
   });
 });
@@ -30,10 +59,17 @@ app.on('window-all-closed', () => {
   }
 });
 
+let chatHistory = [];
+
 ipcMain.on('send-message', (event, message) => {
-  const gemini = spawn('gemini', [message]);
+  chatHistory.push({ role: 'user', parts: [{ text: message }] });
+
+  const gemini = spawn('gemini', [JSON.stringify(chatHistory)]);
+
+  let geminiResponse = '';
 
   gemini.stdout.on('data', (data) => {
+    geminiResponse += data.toString();
     event.sender.send('reply-message', data.toString());
   });
 
@@ -50,5 +86,38 @@ ipcMain.on('send-message', (event, message) => {
 
   gemini.on('close', (code) => {
     console.log(`child process exited with code ${code}`);
+    if (code === 0) {
+      chatHistory.push({ role: 'model', parts: [{ text: geminiResponse }] });
+    }
   });
+});
+
+ipcMain.on('open-settings', () => {
+  createSettingsWindow();
+});
+
+ipcMain.on('save-settings', (event, settings) => {
+  // TODO: Save settings
+  console.log('Settings saved:', settings);
+  if (settingsWindow) {
+    settingsWindow.close();
+  }
+});
+
+ipcMain.on('login', (event) => {
+  const googleOauth = new GoogleOAuth({
+    clientId: 'YOUR_CLIENT_ID', // Replace with your client ID
+    clientSecret: 'YOUR_CLIENT_SECRET', // Replace with your client secret
+    redirectUri: 'http://localhost:8080'
+  });
+
+  googleOauth.getAccessToken(['https://www.googleapis.com/auth/userinfo.email'])
+    .then(token => {
+      console.log('Token:', token);
+      event.sender.send('login-reply', { success: true });
+    })
+    .catch(err => {
+      console.error('Login error:', err);
+      event.sender.send('login-reply', { success: false, error: err });
+    });
 });
