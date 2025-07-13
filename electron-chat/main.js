@@ -2,6 +2,9 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const GoogleOAuth = require('electron-google-oauth');
+const Store = require('electron-store');
+
+const store = new Store();
 
 let mainWindow;
 let settingsWindow;
@@ -64,7 +67,18 @@ let chatHistory = [];
 ipcMain.on('send-message', (event, message) => {
   chatHistory.push({ role: 'user', parts: [{ text: message }] });
 
-  const gemini = spawn('gemini', [JSON.stringify(chatHistory)]);
+  const apiKey = store.get('apiKey');
+  const proxy = store.get('proxy');
+
+  const env = { ...process.env };
+  if (apiKey) {
+    env.GEMINI_API_KEY = apiKey;
+  }
+  if (proxy) {
+    env.HTTPS_PROXY = proxy;
+  }
+
+  const gemini = spawn('gemini', [JSON.stringify(chatHistory)], { env });
 
   let geminiResponse = '';
 
@@ -97,11 +111,18 @@ ipcMain.on('open-settings', () => {
 });
 
 ipcMain.on('save-settings', (event, settings) => {
-  // TODO: Save settings
+  store.set('apiKey', settings.apiKey);
+  store.set('proxy', settings.proxy);
   console.log('Settings saved:', settings);
   if (settingsWindow) {
     settingsWindow.close();
   }
+});
+
+ipcMain.on('get-settings', (event) => {
+  const apiKey = store.get('apiKey');
+  const proxy = store.get('proxy');
+  event.sender.send('load-settings', { apiKey, proxy });
 });
 
 ipcMain.on('login', (event) => {
