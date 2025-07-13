@@ -11,5 +11,11 @@
   "license": "ISC",
   "devDependencies": {
     "electron": "^28.0.0"
+  },
+  "dependencies": {
+    "electron-google-oauth": "^2.0.0",
+    "marked": "^4.0.12",
+    "gemini-cli": "0.1.11",
+    "electron-store": "^8.1.0"
   }
 }

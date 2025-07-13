@@ -2,16 +2,23 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Gemini Chat</title>
+    <title>AI 大模型</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="toolbar">
+        <button id="settings-button">设置</button>
+        <button id="login-button">登录</button>
+    </div>
     <div id="chat-container">
         <div id="chat-box"></div>
         <div id="input-container">
-            <input type="text" id="message-input" placeholder="Type your message...">
-            <button id="send-button">Send</button>
+            <input type="text" id="message-input" placeholder="输入你的消息...">
+            <button id="send-button">发送</button>
         </div>
+    </div>
+    <div id="status-bar">
+        <span id="status-text">未登录</span>
     </div>
     <script src="./renderer.js"></script>
 </body>

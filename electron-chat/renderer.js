@@ -1,8 +1,20 @@
+const { marked } = require('marked');
+const settingsButton = document.getElementById('settings-button');
+const loginButton = document.getElementById('login-button');
 const sendButton = document.getElementById('send-button');
 const messageInput = document.getElementById('message-input');
 const chatBox = document.getElementById('chat-box');
+const statusText = document.getElementById('status-text');
 
 let thinkingElement = null;
+
+settingsButton.addEventListener('click', () => {
+    window.electronAPI.openSettings();
+});
+
+loginButton.addEventListener('click', () => {
+    window.electronAPI.login();
+});
 
 sendButton.addEventListener('click', () => {
     const message = messageInput.value;
@@ -39,6 +51,15 @@ window.electronAPI.onReply((message) => {
     }
 
     const geminiMessageElement = document.createElement('div');
-    geminiMessageElement.textContent = `Gemini: ${message}`;
+    geminiMessageElement.innerHTML = marked(`Gemini: ${message}`);
     chatBox.appendChild(geminiMessageElement);
+});
+
+window.electronAPI.onLoginReply((response) => {
+    if (response.success) {
+        statusText.textContent = 'Logged in';
+    } else {
+        statusText.textContent = 'Login failed';
+        console.error('Login failed:', response.error);
+    }
 });
